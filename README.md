@@ -11,12 +11,21 @@
 ![H2](https://img.shields.io/badge/H2-2.2-09476B)
 ![Tests](https://img.shields.io/badge/tests-181%20passed-brightgreen)
 
-<!-- 部署到 GitHub 后，把下面链接里的 OWNER/REPO 换成实际仓库即可显示流水线状态 -->
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 
 TaskMaster 从「Servlet + JSP + JDBC」一路演进到「Spring Boot 3 + Thymeleaf + MyBatis-Plus + 可执行 JAR」。
 本阶段补齐 **CI/CD 自动化流水线、OpenAPI 接口手册、PR 代码评审、Demo 演示方案**，
 让「提交即验证、文档与代码同频、演示可复现」成为工程习惯，而不是答辩前的临时补救。
+
+## 核心特性
+
+- **任务管理**：新增 / 修改 / 删除 / 分页列表，标题模糊 + 状态筛选，查询条件翻页不丢；
+- **双入口**：Thymeleaf 页面（表单 + 服务端校验回显）与 JSON API（统一响应体 + 错误码）；
+- **安全边界**：Session 登录 + 拦截器；页面未登录 302 到 `/login`，API 未登录 401 JSON；
+- **排序白名单**：`TaskSort` 枚举收敛排序列，`ORDER BY` 不接受外部字符串；
+- **异步审计**：写操作触发 `@Async` 审计，`/api/audits` 可查，Demo 可观察线程名；
+- **可交付**：`mvn clean test` 181 个用例门禁 → `mvn package` 可执行 JAR → GitHub Actions 归档；
+- **零外部依赖演示**：test 环境用 H2 内存库，不需要安装 MySQL。
 
 ---
 
