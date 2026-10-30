@@ -1,0 +1,39 @@
+# ===== prod：生产环境，数据库连接信息全部取自环境变量，日志落盘、模板缓存开启 =====
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/taskmaster?allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+    hikari:
+      pool-name: prod-pool
+      maximum-pool-size: 30
+      minimum-idle: 10
+      connection-timeout: 3000
+      max-lifetime: 1800000
+  sql:
+    init:
+      # 生产库结构由 DBA 执行 db/schema-mysql.sql 管理，应用启动不自动改表
+      mode: never
+  thymeleaf:
+    cache: true
+
+logging:
+  level:
+    root: WARN
+    cn.edu.mju.band: WARN
+  file:
+    name: logs/task-springboot.log
+
+server:
+  error:
+    include-message: never
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 20
+
+task:
+  page:
+    # prod 环境默认每页 10 条
+    default-size: 10

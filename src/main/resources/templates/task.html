@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('任务列表')}">
+    <title>任务列表 · 任务管理</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('list')}"></header>
+
+<main class="container">
+    <section class="page-head">
+        <div>
+            <h1>任务列表</h1>
+            <p class="subtitle">
+                共 <strong th:text="${page.total}">0</strong> 条任务
+                <span th:if="${searchTitle != null or searchStatus != null}"> · 已按条件筛选</span>
+            </p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/task(opt='add')}" href="/task?opt=add">
+            <span class="btn-icon" aria-hidden="true">+</span>新增任务
+        </a>
+    </section>
+
+    <div class="alert alert-success" role="status" th:if="${message}" th:text="${message}"></div>
+    <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+
+    <!-- 搜索条件区：名称模糊 + 状态筛选，GET 提交，翻页时由分页链接携带 -->
+    <form class="card filter-form" method="get" th:action="@{/task}" action="/task">
+        <div class="field">
+            <label for="q-title">任务名称</label>
+            <input id="q-title" type="search" name="title" th:value="${searchTitle}"
+                   placeholder="输入关键字，模糊匹配标题" autocomplete="off">
+        </div>
+        <div class="field">
+            <label for="q-status">任务状态</label>
+            <select id="q-status" name="status">
+                <option value="" th:selected="${searchStatus == null}">全部状态</option>
+                <option value="0" th:selected="${searchStatus != null and searchStatus == 0}">待办</option>
+                <option value="1" th:selected="${searchStatus != null and searchStatus == 1}">进行中</option>
+                <option value="2" th:selected="${searchStatus != null and searchStatus == 2}">已完成</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button class="btn btn-primary" type="submit">搜索</button>
+            <a class="btn btn-ghost" th:href="@{/task}" href="/task">重置</a>
+        </div>
+    </form>
+
+    <div class="card table-card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th class="col-id">编号</th>
+                    <th class="col-title">任务标题</th>
+                    <th class="col-content">任务内容</th>
+                    <th class="col-status">状态</th>
+                    <th class="col-time">创建时间</th>
+                    <th class="col-actions">操作</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(page.records)}">
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <div class="empty-icon" aria-hidden="true">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                     stroke="#9aa4b2" stroke-width="1.8" stroke-linecap="round">
+                                    <rect x="4" y="3.5" width="16" height="17" rx="3"/>
+                                    <path d="M8.5 8.5h7M8.5 12.5h7M8.5 16.5h4"/>
+                                </svg>
+                            </div>
+                            <p class="empty-title">没有找到任务</p>
+                            <p class="empty-hint">换个关键字试试，或者先创建一条任务。</p>
+                            <a class="btn btn-primary" th:href="@{/task(opt='add')}" href="/task?opt=add">新增任务</a>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:each="t : ${page.records}">
+                    <td class="col-id"><span class="id-badge" th:text="${'#' + t.id}">#1</span></td>
+                    <td class="col-title" th:text="${t.title}">任务标题</td>
+                    <td class="col-content">
+                        <span class="muted" th:if="${#strings.isEmpty(t.content)}">—</span>
+                        <span class="content-text" th:unless="${#strings.isEmpty(t.content)}"
+                              th:text="${t.content}" th:title="${t.content}">任务内容</span>
+                    </td>
+                    <td class="col-status">
+                        <span class="pill pill-todo" th:if="${t.status == 0}">待办</span>
+                        <span class="pill pill-doing" th:if="${t.status == 1}">进行中</span>
+                        <span class="pill pill-done" th:if="${t.status == 2}">已完成</span>
+                    </td>
+                    <td class="col-time"
+                        th:text="${t.createTime != null ? #dates.format(t.createTime, 'yyyy-MM-dd HH:mm') : '—'}">
+                        2026-10-01 09:00
+                    </td>
+                    <td class="col-actions">
+                        <div class="row-actions">
+                            <a class="btn btn-sm btn-ghost"
+                               th:href="@{/task(opt='update', id=${t.id})}">编辑</a>
+                            <form method="post" th:action="@{/task}" action="/task"
+                                  onsubmit="return confirm('确定删除该任务吗？');">
+                                <input type="hidden" name="opt" value="delete"/>
+                                <input type="hidden" name="id" th:value="${t.id}"/>
+                                <button type="submit" class="btn btn-sm btn-danger-ghost">删除</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 分页：MyBatis-Plus Page 的 current/pages/total；链接自动携带筛选条件 -->
+        <div class="pager" th:if="${page.pages > 0}">
+            <span class="pager-info">
+                第 <strong th:text="${page.current}">1</strong> /
+                <strong th:text="${page.pages}">1</strong> 页
+                · 共 <span th:text="${page.total}">0</span> 条
+            </span>
+            <div class="pager-links">
+                <a class="btn btn-sm btn-ghost" th:if="${page.current > 1}"
+                   th:href="@{/task(pageNum=1, title=${searchTitle}, status=${searchStatus})}">首页</a>
+                <span class="btn btn-sm btn-ghost is-disabled" th:unless="${page.current > 1}">首页</span>
+
+                <a class="btn btn-sm btn-ghost" th:if="${page.current > 1}"
+                   th:href="@{/task(pageNum=${page.current - 1}, title=${searchTitle}, status=${searchStatus})}">上一页</a>
+                <span class="btn btn-sm btn-ghost is-disabled" th:unless="${page.current > 1}">上一页</span>
+
+                <a class="btn btn-sm btn-ghost pager-num" th:each="n : ${pageNumbers}"
+                   th:classappend="${n == page.current} ? 'is-active'"
+                   th:href="@{/task(pageNum=${n}, title=${searchTitle}, status=${searchStatus})}"
+                   th:text="${n}">1</a>
+
+                <a class="btn btn-sm btn-ghost" th:if="${page.current < page.pages}"
+                   th:href="@{/task(pageNum=${page.current + 1}, title=${searchTitle}, status=${searchStatus})}">下一页</a>
+                <span class="btn btn-sm btn-ghost is-disabled" th:unless="${page.current < page.pages}">下一页</span>
+
+                <a class="btn btn-sm btn-ghost" th:if="${page.current < page.pages}"
+                   th:href="@{/task(pageNum=${page.pages}, title=${searchTitle}, status=${searchStatus})}">尾页</a>
+                <span class="btn btn-sm btn-ghost is-disabled" th:unless="${page.current < page.pages}">尾页</span>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

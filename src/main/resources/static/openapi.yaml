@@ -1,0 +1,701 @@
+openapi: 3.0.3
+
+info:
+  title: TaskMaster 任务管理 API
+  version: 1.0.0
+  description: |
+    TaskMaster 在 Spring Boot 3 + MyBatis-Plus 之上提供的一套 JSON 接口，
+    与 Thymeleaf 页面复用同一套业务规则（`ITaskBuss`）。
+
+    **约定**
+    - 所有接口返回统一响应体 `ApiResponse`：`code`、`message`、`data`、`timestamp`。
+    - `code = 0` 表示成功；非 0 时同时配合 HTTP 状态码使用，详见「错误码」。
+    - 鉴权沿用页面登录后的 Session Cookie（`JSESSIONID`）；未登录访问 `/api/**` 返回 401 JSON，不会重定向到登录页。
+    - 时间字段统一为 `yyyy-MM-dd HH:mm:ss`（GMT+8）。
+    - 排序字段只允许 `createTime`、`title`、`status` 三个白名单列。
+
+    **认证示例**
+    ```bash
+    # 1. 先登录，保存 Cookie
+    curl -c cookie.txt -X POST http://localhost:18080/login \
+         -d 'loginName=admin&loginPwd=123456'
+    # 2. 携带 Cookie 调用 API
+    curl -b cookie.txt http://localhost:18080/api/tasks
+    ```
+  contact:
+    name: TaskMaster 课程项目
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: dev（连接本机 MySQL）
+  - url: http://localhost:18080
+    description: test（H2 内存库，Demo/验收使用）
+
+tags:
+  - name: 任务
+    description: 任务的查询、新增、修改、删除与批量改状态
+  - name: 审计
+    description: 异步审计事件的查询（用于观察异步处理结果）
+
+security:
+  - sessionCookie: []
+
+paths:
+  /api/tasks:
+    get:
+      tags:
+        - 任务
+      summary: 分页查询任务
+      description: 支持标题模糊、状态精确、分页与白名单排序。排序字段不合法时返回 400，不会拼进 SQL。
+      operationId: listTasks
+      parameters:
+        - $ref: '#/components/parameters/Title'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/PageNum'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Sort'
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TaskPage'
+              examples:
+                success:
+                  summary: 默认查询（第 1 页、每页 10 条、创建时间倒序）
+                  value:
+                    code: 0
+                    message: 成功
+                    data:
+                      records:
+                        - id: 7
+                          title: 代码评审
+                          content: 消除坏味道
+                          status: 0
+                          statusLabel: 待办
+                          createTime: '2026-10-07 09:00:00'
+                      total: 7
+                      current: 1
+                      size: 10
+                      pages: 1
+                    timestamp: '2026-10-30T09:30:00+08:00'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    post:
+      tags:
+        - 任务
+      summary: 新增任务
+      description: 成功后返回 201，`Location` 头指向新任务；主键与创建时间由数据库生成。
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskSaveRequest'
+            examples:
+              create:
+                value:
+                  title: 准备答辩 PPT
+                  content: 整理 AI 提效比数据
+                  status: 1
+      responses:
+        '201':
+          description: 创建成功
+          headers:
+            Location:
+              description: 新任务资源地址
+              schema:
+                type: string
+                example: /api/tasks/42
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TaskView'
+              examples:
+                created:
+                  value:
+                    code: 0
+                    message: 任务已创建
+                    data:
+                      id: 42
+                      title: 准备答辩 PPT
+                      content: 整理 AI 提效比数据
+                      status: 1
+                      statusLabel: 进行中
+                      createTime: '2026-10-30 09:31:00'
+                    timestamp: '2026-10-30T09:31:00+08:00'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/tasks/{id}:
+    parameters:
+      - $ref: '#/components/parameters/TaskId'
+    get:
+      tags:
+        - 任务
+      summary: 按编号查询任务
+      operationId: getTask
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TaskView'
+              examples:
+                success:
+                  value:
+                    code: 0
+                    message: 成功
+                    data:
+                      id: 7
+                      title: 代码评审
+                      content: 消除坏味道
+                      status: 0
+                      statusLabel: 待办
+                      createTime: '2026-10-07 09:00:00'
+                    timestamp: '2026-10-30T09:30:00+08:00'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    put:
+      tags:
+        - 任务
+      summary: 修改任务
+      description: 任务不存在时返回 404；`content` 不传表示保持原值，传空串表示清空。
+      operationId: updateTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskSaveRequest'
+            examples:
+              update:
+                value:
+                  title: 准备答辩 PPT（终稿）
+                  status: 2
+      responses:
+        '200':
+          description: 修改成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TaskView'
+              examples:
+                updated:
+                  value:
+                    code: 0
+                    message: 任务已更新
+                    data:
+                      id: 7
+                      title: 准备答辩 PPT（终稿）
+                      content: 消除坏味道
+                      status: 2
+                      statusLabel: 已完成
+                      createTime: '2026-10-07 09:00:00'
+                    timestamp: '2026-10-30T09:32:00+08:00'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    delete:
+      tags:
+        - 任务
+      summary: 删除任务
+      operationId: deleteTask
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                deleted:
+                  value:
+                    code: 0
+                    message: 任务已删除
+                    data: null
+                    timestamp: '2026-10-30T09:33:00+08:00'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/tasks/batch-status:
+    patch:
+      tags:
+        - 任务
+      summary: 批量修改任务状态
+      description: 使用一条 `UPDATE ... WHERE id IN (...)` 完成，最多 100 条；返回实际更新行数。
+      operationId: batchUpdateStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchStatusRequest'
+            examples:
+              batch:
+                value:
+                  ids:
+                    - 1
+                    - 2
+                    - 3
+                  status: 2
+      responses:
+        '200':
+          description: 批量更新完成
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: integer
+                        description: 实际更新的行数
+              examples:
+                success:
+                  value:
+                    code: 0
+                    message: 已更新 3 条任务
+                    data: 3
+                    timestamp: '2026-10-30T09:34:00+08:00'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/audits:
+    get:
+      tags:
+        - 审计
+      summary: 查询最近的异步审计事件
+      description: 写操作完成后由 `task-audit-*` 线程异步写入内存队列，这里按时间倒序读取。
+      operationId: listAudits
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: 返回条数，1 ~ 200
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TaskAuditEntry'
+              examples:
+                success:
+                  value:
+                    code: 0
+                    message: 成功
+                    data:
+                      - at: '2026-10-30T09:35:00+08:00'
+                        thread: task-audit-1
+                        action: CREATE
+                        taskId: 42
+                        detail: 准备答辩 PPT
+                      - at: '2026-10-30T09:35:01+08:00'
+                        thread: task-audit-2
+                        action: BATCH_STATUS
+                        taskId: null
+                        detail: 'ids=[1, 2, 3], status=2'
+                    timestamp: '2026-10-30T09:35:01+08:00'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+      description: 通过 `POST /login` 登录后由服务端下发的会话 Cookie。
+
+  parameters:
+    TaskId:
+      name: id
+      in: path
+      required: true
+      description: 任务编号
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      example: 7
+    Title:
+      name: title
+      in: query
+      required: false
+      description: 标题关键字，模糊匹配
+      schema:
+        type: string
+        maxLength: 100
+      example: 报告
+    Status:
+      name: status
+      in: query
+      required: false
+      description: 任务状态：0 待办 / 1 进行中 / 2 已完成
+      schema:
+        type: integer
+        enum: [0, 1, 2]
+      example: 1
+    PageNum:
+      name: pageNum
+      in: query
+      required: false
+      description: 页码，从 1 开始
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      description: 每页条数，1 ~ 100
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+    Sort:
+      name: sort
+      in: query
+      required: false
+      description: '排序：字段[,asc|desc]，字段只允许 createTime / title / status；只写字段时默认 asc，不传时默认 createTime,desc'
+      schema:
+        type: string
+        default: createTime,desc
+        pattern: '^(createTime|title|status)(,(asc|desc))?$'
+      example: title,asc
+
+  schemas:
+    ApiErrorCode:
+      type: integer
+      description: |
+        业务错误码：
+        - `0` 成功
+        - `40001` 请求参数不合法（校验失败、页码越界、非法排序字段等）
+        - `40100` 未登录或会话已过期
+        - `40401` 任务不存在
+        - `50000` 未预期的服务器内部错误
+        - `50001` 数据库暂时不可用
+      enum: [0, 40001, 40100, 40401, 50000, 50001]
+
+    ApiResponse:
+      type: object
+      description: 统一响应体
+      required: [code, message, timestamp]
+      properties:
+        code:
+          $ref: '#/components/schemas/ApiErrorCode'
+        message:
+          type: string
+          description: 可读提示；成功时为「成功」或操作结果
+          example: 成功
+        data:
+          description: 业务数据；失败时通常为 null，参数校验失败时为字段错误集合
+          nullable: true
+        timestamp:
+          type: string
+          description: 服务端时间（ISO-8601，带时区）
+          example: '2026-10-30T09:30:00+08:00'
+
+    TaskView:
+      type: object
+      required: [id, title, status, statusLabel]
+      properties:
+        id:
+          type: integer
+          format: int32
+          example: 7
+        title:
+          type: string
+          example: 代码评审
+        content:
+          type: string
+          nullable: true
+          example: 消除坏味道
+        status:
+          type: integer
+          enum: [0, 1, 2]
+          example: 0
+        statusLabel:
+          type: string
+          enum: [待办, 进行中, 已完成, 未知]
+          example: 待办
+        createTime:
+          type: string
+          nullable: true
+          description: 创建时间，格式 yyyy-MM-dd HH:mm:ss
+          example: '2026-10-07 09:00:00'
+
+    TaskPage:
+      type: object
+      required: [records, total, current, size, pages]
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskView'
+        total:
+          type: integer
+          format: int64
+          example: 7
+        current:
+          type: integer
+          format: int64
+          example: 1
+        size:
+          type: integer
+          format: int64
+          example: 10
+        pages:
+          type: integer
+          format: int64
+          example: 1
+
+    TaskSaveRequest:
+      type: object
+      required: [title, status]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 任务标题，不能为空白
+          example: 准备答辩 PPT
+        content:
+          type: string
+          maxLength: 2000
+          nullable: true
+          example: 整理 AI 提效比数据
+        status:
+          type: integer
+          enum: [0, 1, 2]
+          description: 0 待办 / 1 进行中 / 2 已完成
+          example: 1
+
+    BatchStatusRequest:
+      type: object
+      required: [ids, status]
+      properties:
+        ids:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: integer
+            format: int32
+          example: [1, 2, 3]
+        status:
+          type: integer
+          enum: [0, 1, 2]
+          example: 2
+
+    TaskAuditEntry:
+      type: object
+      required: [at, thread, action]
+      properties:
+        at:
+          type: string
+          example: '2026-10-30T09:35:00+08:00'
+        thread:
+          type: string
+          description: 实际执行线程名，异步线程以 task-audit- 开头
+          example: task-audit-1
+        action:
+          type: string
+          enum: [CREATE, UPDATE, DELETE, BATCH_STATUS]
+          example: CREATE
+        taskId:
+          type: integer
+          nullable: true
+          description: 单条操作的任务编号；批量操作时为 null
+          example: 42
+        detail:
+          type: string
+          nullable: true
+          example: 准备答辩 PPT
+
+    ValidationErrorData:
+      type: object
+      description: 字段名 → 错误信息
+      additionalProperties:
+        type: string
+      example:
+        title: 任务标题不能为空
+        status: 任务状态只能是 0/1/2
+
+  responses:
+    BadRequest:
+      description: 请求参数不合法（业务码 40001）
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiResponse'
+              - type: object
+                properties:
+                  code:
+                    type: integer
+                    enum: [40001]
+          examples:
+            invalidParam:
+              value:
+                code: 40001
+                message: '不支持的排序字段：createTime;DROP TABLE t_task;--（可选：createTime、title、status）'
+                data: null
+                timestamp: '2026-10-30T09:30:00+08:00'
+
+    ValidationFailed:
+      description: 字段校验失败（业务码 40001，`data` 为字段错误集合）
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiResponse'
+              - type: object
+                properties:
+                  code:
+                    type: integer
+                    enum: [40001]
+                  data:
+                    $ref: '#/components/schemas/ValidationErrorData'
+          examples:
+            validationFailed:
+              value:
+                code: 40001
+                message: 任务标题不能为空
+                data:
+                  title: 任务标题不能为空
+                  status: 任务状态只能是 0/1/2
+                timestamp: '2026-10-30T09:30:00+08:00'
+
+    Unauthorized:
+      description: 未登录或会话过期（业务码 40100）
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiResponse'
+              - type: object
+                properties:
+                  code:
+                    type: integer
+                    enum: [40100]
+          examples:
+            unauthorized:
+              value:
+                code: 40100
+                message: 未登录或会话已过期
+                data: null
+                timestamp: '2026-10-30T09:30:00+08:00'
+
+    NotFound:
+      description: 任务不存在（业务码 40401）
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiResponse'
+              - type: object
+                properties:
+                  code:
+                    type: integer
+                    enum: [40401]
+          examples:
+            notFound:
+              value:
+                code: 40401
+                message: '任务不存在：404'
+                data: null
+                timestamp: '2026-10-30T09:30:00+08:00'
+
+    ServerError:
+      description: 服务端错误（数据库不可用 50001 / 未预期异常 50000）
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiResponse'
+              - type: object
+                properties:
+                  code:
+                    type: integer
+                    enum: [50000, 50001]
+          examples:
+            dbUnavailable:
+              value:
+                code: 50001
+                message: 任务数据访问失败，数据库暂时不可用，请稍后重试
+                data: null
+                timestamp: '2026-10-30T09:30:00+08:00'

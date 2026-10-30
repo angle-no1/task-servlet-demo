@@ -1,0 +1,54 @@
+# =====================================================================
+# 主配置：只放"与环境无关"的公共项 + 默认激活的环境
+# 旧 applicationContext.xml / springmvc.xml / web.xml / db.properties / TaskMapper.xml 已全部删除
+# =====================================================================
+spring:
+  application:
+    name: task-springboot
+  # 默认环境；命令行 --spring.profiles.active=test 可覆盖
+  profiles:
+    active: dev
+  # ===== 环节二：Thymeleaf 取代 JSP，模板位于 classpath:/templates/ =====
+  thymeleaf:
+    cache: false
+    encoding: UTF-8
+    mode: HTML
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+
+# ===== 环节三：MyBatis-Plus 取代 mapper XML =====
+mybatis-plus:
+  configuration:
+    # create_time -> createTime（实体已用 @TableField 显式声明，这里作为兜底）
+    map-underscore-to-camel-case: true
+    default-statement-timeout: 30
+  global-config:
+    banner: false
+    db-config:
+      # 与 @TableId(type = IdType.AUTO) 一致
+      id-type: auto
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+    # 原 web.xml 中 CharacterEncodingFilter 的等价配置
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+    session:
+      # 只用 Cookie 跟踪会话，避免链接里追加 ;jsessionid=
+      tracking-modes: cookie
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+
+logging:
+  level:
+    root: INFO
+    cn.edu.mju.band: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"

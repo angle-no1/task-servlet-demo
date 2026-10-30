@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"
+      th:with="isUpdate=${opt == 'update'}">
+<head th:replace="~{fragments/layout :: head('任务表单')}">
+    <title>任务表单 · 任务管理</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('add')}"></header>
+
+<main class="container">
+    <section class="page-head">
+        <div>
+            <h1 th:text="${isUpdate ? '编辑任务' : '新增任务'}">新增任务</h1>
+            <p class="subtitle"
+               th:text="${isUpdate ? '修改任务信息，保存后立即生效。' : '填写标题和状态即可创建一条任务，内容为选填项。'}">
+                填写标题和状态即可创建一条任务，内容为选填项。
+            </p>
+        </div>
+        <a class="btn btn-ghost" th:href="@{/task}" href="/task">返回列表</a>
+    </section>
+
+    <form class="card form-card" method="post" th:action="@{/task}" action="/task"
+          th:object="${task}">
+        <!-- 服务端校验的全局错误（必须在 th:object 作用域内） -->
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p th:each="err : ${#fields.globalErrors()}" th:text="${err}">表单校验失败</p>
+        </div>
+
+        <input type="hidden" name="opt" th:value="${opt}"/>
+        <input type="hidden" th:field="*{id}"/>
+
+        <div class="field">
+            <label for="title">任务标题 <span class="required">*</span></label>
+            <input id="title" type="text" maxlength="100" required autocomplete="off"
+                   placeholder="例如：完成实验报告"
+                   th:field="*{title}"
+                   th:classappend="${#fields.hasErrors('title')} ? 'is-invalid'">
+            <p class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">
+                任务标题不能为空
+            </p>
+            <p class="hint">必填，最多 100 个字符；服务端会再次校验，绕开浏览器也无效。</p>
+        </div>
+
+        <div class="field">
+            <label>任务状态</label>
+            <div class="segmented" role="radiogroup" aria-label="任务状态">
+                <label>
+                    <input type="radio" th:field="*{status}" value="0">
+                    <span>待办</span>
+                </label>
+                <label>
+                    <input type="radio" th:field="*{status}" value="1">
+                    <span>进行中</span>
+                </label>
+                <label>
+                    <input type="radio" th:field="*{status}" value="2">
+                    <span>已完成</span>
+                </label>
+            </div>
+            <p class="field-error" th:if="${#fields.hasErrors('status')}" th:errors="*{status}">
+                请选择任务状态
+            </p>
+            <p class="hint">新建任务默认进入「待办」。</p>
+        </div>
+
+        <div class="field">
+            <label for="content">任务内容</label>
+            <textarea id="content" rows="6" placeholder="补充任务说明、验收标准等（选填）"
+                      th:field="*{content}"></textarea>
+        </div>
+
+        <div class="form-actions">
+            <a class="btn btn-ghost" th:href="@{/task}" href="/task">取消</a>
+            <button class="btn btn-primary" type="submit"
+                    th:text="${isUpdate ? '保存修改' : '创建任务'}">创建任务</button>
+        </div>
+    </form>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,31 @@
+# ===== dev：本地开发环境，连接真实 MySQL，打开 SQL 调试日志，启动时自动建表/补种子数据 =====
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/taskmaster?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: "123456"
+    hikari:
+      pool-name: dev-pool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 5000
+  sql:
+    init:
+      # 跨机部署时第一次启动即可自动创建 t_task / t_user，并写入 admin 账号（脚本幂等）
+      mode: always
+      encoding: UTF-8
+      schema-locations: classpath:db/schema-mysql.sql
+      data-locations: classpath:db/data-mysql.sql
+  thymeleaf:
+    cache: false
+
+logging:
+  level:
+    cn.edu.mju.band: DEBUG
+    cn.edu.mju.band.mapper: DEBUG
+
+task:
+  page:
+    # dev 环境默认每页 5 条
+    default-size: 5

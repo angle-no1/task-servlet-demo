@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  公共片段：head / header / footer。
+  Thymeleaf 模板是纯 HTML，直接用浏览器打开也能看到静态结构（th:* 属性会被忽略），
+  这正是 JSP 做不到的“静态可预览”。
+-->
+<head th:fragment="head(pageTitle)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${pageTitle + ' · 任务管理'}">任务管理</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="/css/app.css" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<header th:fragment="header(navActive)" class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" th:href="@{/task}" href="/task">
+            <span class="brand-mark" aria-hidden="true">T</span>
+            <span class="brand-text">任务管理<small>Task Manager</small></span>
+        </a>
+
+        <nav class="topnav" aria-label="主导航">
+            <a th:href="@{/task}" href="/task"
+               th:classappend="${navActive == 'list'} ? 'active'">任务列表</a>
+            <a th:href="@{/task(opt='add')}" href="/task?opt=add"
+               th:classappend="${navActive == 'add'} ? 'active'">新增任务</a>
+        </nav>
+
+        <div class="topbar-user" th:if="${loginUser != null}">
+            <span class="user-chip">
+                <span class="user-avatar" aria-hidden="true"
+                      th:text="${#strings.isEmpty(loginUser.loginName) ? 'U' : #strings.substring(loginUser.loginName, 0, 1)}">A</span>
+                <span th:text="${loginUser.loginName}">admin</span>
+            </span>
+            <form class="logout-form" th:action="@{/logout}" action="/logout" method="post">
+                <button class="btn btn-sm btn-ghost" type="submit">退出</button>
+            </form>
+        </div>
+        <a th:if="${loginUser == null}" class="btn btn-sm btn-primary"
+           th:href="@{/login}" href="/login">登录</a>
+    </div>
+</header>
+
+<footer th:fragment="footer" class="footer">
+    <div class="footer-inner">
+        Java 高级编程实验 · SpringBoot 现代化与部署上线 · task-springboot
+    </div>
+</footer>
+
+</body>
+</html>

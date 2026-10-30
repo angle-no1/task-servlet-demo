@@ -1,0 +1,25 @@
+# ===== test：测试环境，H2 内存库（MODE=MySQL），无需物理数据库即可跑集成测试 =====
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:taskdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: ""
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+      schema-locations: classpath:db/schema-h2.sql
+      data-locations: classpath:db/data-h2.sql
+  thymeleaf:
+    cache: false
+
+logging:
+  level:
+    root: WARN
+    cn.edu.mju.band: INFO
+
+task:
+  page:
+    # test 环境默认每页 3 条，便于验证分页逻辑
+    default-size: 3
