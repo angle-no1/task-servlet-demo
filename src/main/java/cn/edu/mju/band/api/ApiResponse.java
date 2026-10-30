@@ -44,6 +44,7 @@ public record ApiResponse<T>(int code, String message, T data, String timestamp)
     }
 
     private static String now() {
-        return OffsetDateTime.now().format(TIMESTAMP_FORMAT);
+        // 截断到秒：与文档示例保持一致，避免响应里出现 7 位纳秒
+        return OffsetDateTime.now().withNano(0).format(TIMESTAMP_FORMAT);
     }
 }

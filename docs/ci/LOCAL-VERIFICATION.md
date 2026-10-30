@@ -3,7 +3,7 @@
 > 目的：在没有远程 GitHub 仓库的离线环境里，用与 `.github/workflows/ci.yml` **完全相同的命令**
 > 验证流水线各阶段可复现；GitHub Actions 的实际运行截图由任课教师/学生在推送后补充。
 >
-> 验证时间：2026-10-30 09:17 ~ 09:25（Asia/Shanghai）
+> 验证时间：2026-10-30 09:17 ~ 09:26（Asia/Shanghai）
 > 环境：Windows 10 · JDK 17.0.1 · Maven 3.9.16 · 项目路径 `task-servlet-demo`
 
 ---
@@ -19,7 +19,7 @@ mvn -B clean test
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  11.629 s
+[INFO] Total time:  11.642 s
 ```
 
 | 测试类 | 用例数（含参数化展开） | 覆盖点 |
@@ -52,7 +52,7 @@ mvn -B package -DskipTests
 
 | 产物 | 大小 | 说明 |
 | --- | --- | --- |
-| `target/task-springboot.jar` | 32,665,820 字节（约 31.2 MB） | fat jar，内嵌 Tomcat |
+| `target/task-springboot.jar` | 约 31.2 MB | fat jar，内嵌 Tomcat |
 | `target/task-springboot.jar.original` | — | Spring Boot 插件保留的原始 thin jar，**不是**交付物 |
 
 CI 中通过 `test -f target/task-springboot.jar` + 精确路径上传，避免把 `.original` 混入 Artifact。

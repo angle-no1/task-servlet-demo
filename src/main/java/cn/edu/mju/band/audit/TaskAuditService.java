@@ -45,7 +45,7 @@ public class TaskAuditService {
     public void record(String action, Integer taskId, String detail) {
         String thread = Thread.currentThread().getName();
         TaskAuditEntry entry = new TaskAuditEntry(
-                OffsetDateTime.now().format(TIME_FORMAT), thread, action, taskId, detail);
+                OffsetDateTime.now().withNano(0).format(TIME_FORMAT), thread, action, taskId, detail);
         store.add(entry);
         log.info("异步审计 action={} taskId={} detail={} thread={}", action, taskId, detail, thread);
     }
