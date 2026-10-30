@@ -298,10 +298,10 @@ return ApiResponse.ok(TaskView.from(task));
 
 | 内容 | 位置 |
 | --- | --- |
-| REST 控制器 | [`TaskRestController`](../src/main/java/cn/edu/mju/band/api/TaskRestController.java) |
-| 统一错误码 | [`ApiErrorCode`](../src/main/java/cn/edu/mju/band/api/ApiErrorCode.java) |
-| 排序白名单 | [`TaskSort`](../src/main/java/cn/edu/mju/band/buss/TaskSort.java)、[`SortSpec`](../src/main/java/cn/edu/mju/band/api/dto/SortSpec.java) |
-| 批量更新 | [`TaskBuss#updateStatusBatch`](../src/main/java/cn/edu/mju/band/buss/impl/TaskBuss.java) |
-| 异步审计 | [`TaskAuditService`](../src/main/java/cn/edu/mju/band/audit/TaskAuditService.java)、[`AsyncConfig`](../src/main/java/cn/edu/mju/band/config/AsyncConfig.java) |
-| 接口手册 | [`docs/api/API.md`](API.md) |
-| 接口测试 | [`TaskRestControllerTest`](../src/test/java/cn/edu/mju/band/api/TaskRestControllerTest.java) |
+| REST 控制器 | [`TaskRestController`](../../src/main/java/cn/edu/mju/band/api/TaskRestController.java) |
+| 统一错误码 | [`ApiErrorCode`](../../src/main/java/cn/edu/mju/band/api/ApiErrorCode.java) |
+| 排序白名单 | [`TaskSort`](../../src/main/java/cn/edu/mju/band/buss/TaskSort.java)、[`SortSpec`](../../src/main/java/cn/edu/mju/band/api/dto/SortSpec.java) |
+| 批量更新 | [`TaskBuss#updateStatusBatch`](../../src/main/java/cn/edu/mju/band/buss/impl/TaskBuss.java) |
+| 异步审计 | [`TaskAuditService`](../../src/main/java/cn/edu/mju/band/audit/TaskAuditService.java)、[`AsyncConfig`](../../src/main/java/cn/edu/mju/band/config/AsyncConfig.java) |
+| 接口手册 | [`docs/api/API.md`](../api/API.md) |
+| 接口测试 | [`TaskRestControllerTest`](../../src/test/java/cn/edu/mju/band/api/TaskRestControllerTest.java) |

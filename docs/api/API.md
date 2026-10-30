@@ -1,8 +1,8 @@
 # TaskMaster API 接口手册
 
 > 适用版本：`task-springboot 1.0.0`（Java 高级编程实验 · 第六阶段 DevOps 交付）
-> 规范文件：[`src/main/resources/static/openapi.yaml`](../src/main/resources/static/openapi.yaml)
-> 实现代码：[`TaskRestController`](../src/main/java/cn/edu/mju/band/api/TaskRestController.java)、[`TaskApiExceptionHandler`](../src/main/java/cn/edu/mju/band/api/TaskApiExceptionHandler.java)
+> 规范文件：[`src/main/resources/static/openapi.yaml`](../../src/main/resources/static/openapi.yaml)
+> 实现代码：[`TaskRestController`](../../src/main/java/cn/edu/mju/band/api/TaskRestController.java)、[`TaskApiExceptionHandler`](../../src/main/java/cn/edu/mju/band/api/TaskApiExceptionHandler.java)
 
 ---
 
@@ -201,7 +201,7 @@ curl -s -b cookie.txt \
 
 > 早期 AI 初稿直接调用 `TaskView.from(null)`，会触发 NPE 并返回 500。
 > 经 Code Review 后改为显式判空 + `TaskNotFoundException` → 404，见
-> [`docs/code-review/PR-001-rest-api.md`](code-review/PR-001-rest-api.md)。
+> [`docs/code-review/PR-001-rest-api.md`](../code-review/PR-001-rest-api.md)。
 
 ### 3.3 新增任务
 
@@ -317,7 +317,7 @@ curl -s -b cookie.txt -X PATCH http://localhost:18080/api/tasks/batch-status \
 
 > 实现使用一条 `UPDATE t_task SET status=? WHERE id IN (?, ?, ?)`，
 > 而不是循环 `updateById`。AI 初稿的 N+1 写法已在 Code Review 中拦截，
-> 见 [`docs/code-review/PR-001-rest-api.md`](code-review/PR-001-rest-api.md)。
+> 见 [`docs/code-review/PR-001-rest-api.md`](../code-review/PR-001-rest-api.md)。
 
 ### 3.7 查询异步审计事件
 

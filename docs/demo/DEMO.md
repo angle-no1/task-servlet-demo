@@ -220,8 +220,8 @@ ls -lh target/task-springboot.jar
 
 ## 6. 场景五：Code Review 证据（约 1 分钟）
 
-打开 [`docs/code-review/PR-001-rest-api.md`](code-review/PR-001-rest-api.md) 与
-[`PR-002-ci-pipeline.md`](code-review/PR-002-ci-pipeline.md)，按「问题 → 复现 → 修复 → 测试」讲：
+打开 [`docs/code-review/PR-001-rest-api.md`](../code-review/PR-001-rest-api.md) 与
+[`PR-002-ci-pipeline.md`](../code-review/PR-002-ci-pipeline.md)，按「问题 → 复现 → 修复 → 测试」讲：
 
 1. **SQL 注入**：`sort=createTime;DROP TABLE t_task;--`，修复为 `TaskSort` 白名单；
 2. **N+1**：批量改状态循环 `updateById`，修复为一条 `UPDATE ... IN`；

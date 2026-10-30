@@ -197,7 +197,7 @@ concurrency:
 
 | 内容 | 位置 |
 | --- | --- |
-| 工作流 | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) |
+| 工作流 | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) |
 | 本地等价验证 | [`docs/ci/LOCAL-VERIFICATION.md`](../ci/LOCAL-VERIFICATION.md) |
-| 构建配置 | [`pom.xml`](../pom.xml) |
-| 一键启动 | [`scripts/run-demo.ps1`](../scripts/run-demo.ps1) |
+| 构建配置 | [`pom.xml`](../../pom.xml) |
+| 一键启动 | [`scripts/run-demo.ps1`](../../scripts/run-demo.ps1) |
