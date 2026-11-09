@@ -51,3 +51,7 @@ report/*.docx
 compile.log
 testcompile.log
 test.log
+
+### 本地验证临时产物 ###
+body.json
+.workbuddy/

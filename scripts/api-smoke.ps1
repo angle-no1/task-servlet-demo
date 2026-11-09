@@ -11,7 +11,9 @@
 
 $ErrorActionPreference = 'Stop'
 $cookieFile = Join-Path ([System.IO.Path]::GetTempPath()) ("taskmaster-cookie-{0}.txt" -f $PID)
+$respFile = Join-Path ([System.IO.Path]::GetTempPath()) ("taskmaster-resp-{0}.json" -f $PID)
 $script:failed = 0
+$script:total = 0
 
 function Invoke-CurlJson {
     param(
@@ -21,7 +23,9 @@ function Invoke-CurlJson {
         [switch]$Anonymous
     )
 
-    $curlArgs = @('-s', '-X', $Method, "$BaseUrl$Path", '-w', "`n%{http_code}")
+    # 响应体写入临时文件（-o），stdout 只留 HTTP 状态码（-w）：
+    # 状态码是纯 ASCII，不会受代码页影响；响应体按 UTF-8 读回，中文不再乱码。
+    $curlArgs = @('-s', '-o', $respFile, '-w', '%{http_code}', '-X', $Method, "$BaseUrl$Path")
     if (-not $Anonymous) {
         $curlArgs += @('-b', $cookieFile)
     }
@@ -35,20 +39,23 @@ function Invoke-CurlJson {
     }
 
     try {
-        $raw = (& curl.exe @curlArgs) -join "`n"
+        $statusText = ((& curl.exe @curlArgs) -join '').Trim()
+        $bodyText = if (Test-Path $respFile) {
+            [System.IO.File]::ReadAllText($respFile, (New-Object System.Text.UTF8Encoding($false))).Trim()
+        } else { '' }
     }
     finally {
-        if ($jsonFile -and (Test-Path $jsonFile)) {
-            Remove-Item -Path $jsonFile -ErrorAction SilentlyContinue
+        foreach ($tmp in @($jsonFile, $respFile)) {
+            if ($tmp -and (Test-Path $tmp)) {
+                Remove-Item -Path $tmp -ErrorAction SilentlyContinue
+            }
         }
     }
 
-    $splitAt = $raw.LastIndexOf("`n")
-    if ($splitAt -lt 0) {
-        throw "无法解析 curl 输出：$raw"
+    if ($statusText -notmatch '^\d{3}$') {
+        throw "无法解析 HTTP 状态码：$statusText"
     }
-    $bodyText = $raw.Substring(0, $splitAt).Trim()
-    $status = [int]$raw.Substring($splitAt + 1).Trim()
+    $status = [int]$statusText
     $body = if ($bodyText) { $bodyText | ConvertFrom-Json } else { $null }
 
     [pscustomobject]@{ Status = $status; Body = $body }
@@ -56,6 +63,7 @@ function Invoke-CurlJson {
 
 function Test-Step {
     param([string]$Name, [bool]$Ok, [string]$Detail = '')
+    $script:total++
     if ($Ok) {
         Write-Host "[PASS] $Name" -ForegroundColor Green
     }
@@ -159,7 +167,7 @@ Test-Step '审计事件由 task-audit-* 线程写入' (
 Remove-Item -Path $cookieFile -ErrorAction SilentlyContinue
 
 if ($script:failed -gt 0) {
-    Write-Host "`n$($script:failed) 项失败" -ForegroundColor Red
+    Write-Host "`n$($script:failed)/$($script:total) 项失败" -ForegroundColor Red
     exit 1
 }
-Write-Host "`n全部通过 ✅" -ForegroundColor Green
+Write-Host "`n全部通过：$($script:total)/$($script:total)" -ForegroundColor Green

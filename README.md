@@ -287,7 +287,19 @@ powershell -ExecutionPolicy Bypass -File scripts/api-smoke.ps1
 mvn test
 ```
 
-当前共 **181 个用例**（含参数化展开），全部通过。测试分层：
+当前共 **181 个用例**（含参数化展开），全部通过。
+
+一条命令跑完「测试 → 打包 → 起服务 → 接口冒烟」的完整本地验收（答辩截图推荐用这个）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-local.ps1
+```
+
+脚本依次执行：环境自检 → `mvn clean test`（质量门禁）→ 统计 surefire 用例 → `mvn package` 校验 JAR →
+以 test 环境启动到 18080 → 调 `api-smoke.ps1` 跑 15 步接口冒烟 → 汇总；结束时自动关闭自己启动的进程。
+执行细节与配套的截图清单见 [`docs/qa/TEST-GUIDE.md`](docs/qa/TEST-GUIDE.md)。
+
+测试分层：
 
 - `TaskBussTest` / `UserBussTest`：纯 Mockito 单元测试，不连数据库；覆盖排序白名单、批量更新单条 SQL、边界校验；
 - `TaskRestControllerTest`：`@WebMvcTest` 切片，验证统一响应体、400/401/404 错误码、字段校验、注入拦截；
@@ -522,3 +534,5 @@ registry.addInterceptor(loginInterceptor())
 | Demo 演示脚本 | [`docs/demo/DEMO.md`](docs/demo/DEMO.md) |
 | 一键启动 | [`scripts/run-demo.ps1`](scripts/run-demo.ps1)、[`scripts/run-demo.sh`](scripts/run-demo.sh) |
 | API 冒烟 | [`scripts/api-smoke.ps1`](scripts/api-smoke.ps1) |
+| 本地一键验收 | [`scripts/verify-local.ps1`](scripts/verify-local.ps1) |
+| 测试与截图指南 | [`docs/qa/TEST-GUIDE.md`](docs/qa/TEST-GUIDE.md) |
